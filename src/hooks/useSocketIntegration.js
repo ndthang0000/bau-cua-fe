@@ -1,82 +1,58 @@
 import { useEffect } from 'react';
 import { socket } from '../socket';
 import { useGameStore } from '../store/useGameStore';
-import { toast } from 'react-hot-toast'; // Đảm bảo bạn đã import toast nếu dùng
+import { toast } from 'react-hot-toast';
 
 export const useSocketIntegration = () => {
-  const { setMembers, updateRoomStatus, setRoomData } = useGameStore();
+  const { setMembers, updateRoomStatus, setRoomData, addRecentRoom } = useGameStore();
 
   useEffect(() => {
-    // 1. Khởi tạo kết nối
     if (!socket.connected) {
       socket.connect();
     }
 
-    // Kiểm tra ID ngay khi kết nối
-    const handleConnect = () => {
-      console.log("✅ Socket connected. ID:", socket.id);
-    };
-
-    socket.on('connect', handleConnect);
-    if (socket.connected) handleConnect();
-
-    // 2. Debug tất cả event (Hữu ích khi member join)
+    // DEBUG: Theo dõi mọi event đổ về
     socket.onAny((eventName, args) => {
-      console.log(`📡 [AnyEvent]: ${eventName}`, args);
+      console.log(`📡 [Socket Event]: ${eventName}`, args);
     });
 
-    // 3. Định nghĩa các hàm xử lý logic
+    // 1. Xử lý cập nhật phòng (QUAN TRỌNG NHẤT)
     const onRoomUpdate = (room) => {
-      console.log("🎯 Cập nhật phòng từ Server:", room);
-      if (room && room.members) setMembers(room.members);
-      if (room) setRoomData(room);
+      console.log("🎯 Dữ liệu phòng mới nhận được:", room);
+      if (room) {
+        if (room.members) setMembers(room.members);
+        setRoomData(room);
+
+        // Lưu vào danh sách phòng gần đây
+        addRecentRoom({
+          id: room.roomId,
+          players: room.members.length,
+          avatars: room.members.map(m => m.avatar).slice(0, 3)
+        });
+      }
     };
 
     const onGameStatus = (status) => {
-      console.log("🎮 Trạng thái game mới:", status);
+      console.log("🎮 Trạng thái ván đấu:", status);
       updateRoomStatus(status);
     };
 
-    const onGameResult = (data) => {
-      console.log("🏆 Kết quả ván đấu:", data);
-      setRoomData(data);
-    };
-
-    const onBetUpdate = ({ door, amount }) => {
-      console.log(`💸 Bet update: Door ${door} - Amount ${amount}`);
-      // Thêm logic update store của bạn ở đây nếu cần
-    };
-
     const onErrorMsg = (msg) => {
-      toast.error(msg, {
-        icon: '🚫',
-        style: {
-          border: '1px solid #EF4444',
-          padding: '16px',
-          color: '#EF4444',
-          background: '#FFF',
-        },
-      });
+      console.error("❌ Lỗi từ Server:", msg);
+      toast.error(msg);
     };
 
-    // 4. Đăng ký Listeners
+    // ĐĂNG KÝ LISTENERS
     socket.on('room_update', onRoomUpdate);
     socket.on('game_status', onGameStatus);
-    socket.on('game_result', onGameResult);
-    socket.on('bet_update', onBetUpdate);
     socket.on('error_msg', onErrorMsg);
 
-    // 5. Cleanup khi component unmount
     return () => {
-      console.log("🧹 Cleaning up socket listeners...");
-      socket.off('connect', handleConnect);
+      // CLEANUP
+      socket.offAny();
       socket.off('room_update', onRoomUpdate);
       socket.off('game_status', onGameStatus);
-      socket.off('game_result', onGameResult);
-      socket.off('bet_update', onBetUpdate);
       socket.off('error_msg', onErrorMsg);
-      socket.offAny();
     };
-  }, [setMembers, updateRoomStatus, setRoomData]);
-  // Dependency này đảm bảo nếu Store thay đổi hàm, listener sẽ dùng hàm mới nhất.
+  }, [setMembers, updateRoomStatus, setRoomData, addRecentRoom]);
 };

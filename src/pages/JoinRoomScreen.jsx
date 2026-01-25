@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { ChevronLeft, Delete } from 'lucide-react';
-import { socket } from '../socket'; // Import instance socket
+import { socket } from '../socket'; 
 import toast from 'react-hot-toast';
 
 export default function JoinRoomScreen({ onBack, onSuccess }) {
@@ -34,26 +34,17 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
 
     if (!socket.connected) socket.connect();
 
-    // Xóa listener cũ trước khi tạo mới
-    socket.off('room_update');
-    socket.off('error_msg');
-
-    socket.once('error_msg', (msg) => {
-      setCode(['', '', '', '']);
-      toast.error(msg);
-    });
-
-    socket.emit('join_room', { roomId: finalCode, userData: user });
-
-    socket.once('room_update', (roomData) => {
-      if (roomData && roomData.roomId === finalCode) {
-        setRoomData(roomData);
-        addRecentRoom({ 
-          id: finalCode, 
-          players: roomData.members.length, 
-          avatars: roomData.members.map(m => m.avatar).slice(0, 3) 
-        });
-        onSuccess(finalCode);
+    // Gửi emit kèm theo một Callback function (res)
+    socket.emit('join_room', { roomId: finalCode, userData: user }, (res) => {
+      if (res?.success) {
+        // Nếu Server báo thành công -> Mới chuyển màn
+        console.log("✅ Join room thành công");
+        onSuccess(finalCode); 
+      } else {
+        // Nếu Server báo lỗi (Sai mã, phòng đầy, v.v.)
+        console.log("❌ Lỗi join room:", res?.message);
+        toast.error(res?.message || "Mã phòng không hợp lệ");
+        setCode(['', '', '', '']); // Reset mã để nhập lại
       }
     });
   };
@@ -61,43 +52,35 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
   const handleRejoin = (roomId) => {
     if (!socket.connected) socket.connect();
     socket.emit('join_room', { roomId, userData: user });
-    
-    setRoomData(roomData);
-    
+    onSuccess(roomId);
   };
 
   useEffect(() => {
-  const finalCode = code.join('');
-  if (finalCode.length === 4) {
-    // Có thể tự động submit ở đây nếu muốn
-    handleConfirm();
-  }
+    const finalCode = code.join('');
+    if (finalCode.length === 4) {
+      handleConfirm();
+    }
   }, [code]);
-  
 
-  // FETCH THÔNG TIN PHÒNG REAL-TIME
-  // useEffect(() => {
-  //   if (recentRooms.length > 0) {
-  //     const ids = recentRooms.map(r => r.id);
-  //     if (!socket.connected) socket.connect();
+  // FETCH THÔNG TIN PHÒNG GẦN ĐÂY (REAL-TIME)
+  useEffect(() => {
+    if (recentRooms.length > 0) {
+      const ids = recentRooms.map(r => r.id);
+      if (!socket.connected) socket.connect();
       
-  //     // Gửi yêu cầu lấy thông tin
-  //     socket.emit('get_rooms_info', ids);
+      socket.emit('get_rooms_info', ids);
+      socket.on('rooms_info_res', (data) => {
+        setLiveRecentRooms(data);
+      });
+    }
 
-  //     // Nhận kết quả và cập nhật UI
-  //     socket.on('rooms_info_res', (data) => {
-  //       setLiveRecentRooms(data);
-  //     });
-  //   }
-
-  //   return () => {
-  //     socket.off('rooms_info_res');
-  //   };
-  // }, [recentRooms]);
+    return () => {
+      socket.off('rooms_info_res');
+    };
+  }, [recentRooms]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans max-w-md mx-auto relative overflow-hidden">
-      {/* Header */}
       <div className="p-4 flex items-center">
         <button onClick={onBack} className="p-2 -ml-2">
           <ChevronLeft size={28} className="text-gray-800" />
@@ -109,7 +92,6 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
         <h1 className="text-3xl font-black mb-2 tracking-tight">Nhập mã phòng</h1>
         <p className="text-gray-400 text-sm mb-10">Yêu cầu mã 4 chữ số để tham gia</p>
 
-        {/* 4 Digit Input Boxes */}
         <div className="flex justify-center gap-3 mb-10">
           {code.map((num, i) => (
             <div
@@ -122,7 +104,6 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
           ))}
         </div>
 
-        {/* Confirm Button */}
         <button
           onClick={handleConfirm}
           disabled={code.join('').length < 4}
@@ -131,11 +112,8 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
         >
           Xác Nhận
         </button>
-
-        
       </div>
 
-      {/* Numerical Keypad */}
       <div className="bg-gray-50 p-4 grid grid-cols-3 gap-2 pb-8">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
           <button
@@ -146,7 +124,7 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
             {num}
           </button>
         ))}
-        <div /> {/* Empty space */}
+        <div />
         <button
           onClick={() => handleKeyPress('0')}
           className="h-14 bg-white rounded-xl font-bold text-2xl shadow-sm active:bg-gray-200 transition-colors"
@@ -161,51 +139,30 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
         </button>
       </div>
 
-      {/* Recent Rooms: Sử dụng liveRecentRooms thay vì recentRooms để có data mới nhất */}
       <div className="p-6 border-t border-gray-200 bg-white/90 backdrop-blur-md">
-        <div className="text-left">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-800">Phòng Gần Đây</h3>
-          </div>
-          
-          {liveRecentRooms.length > 0 ? (
-            liveRecentRooms.map(room => (
-              <div key={room.id} className="bg-gradient-to-r from-[#FDEFD3] to-[#F7D8A0] p-5 rounded-[32px] shadow-sm relative overflow-hidden group py-4 mb-4 animate-in fade-in slide-in-from-bottom-2">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-black text-xl text-gray-900">Phòng {room.id}</h4>
-                    <p className="text-xs text-green-600 font-bold flex items-center gap-1">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      {room.players} người đang chờ
-                    </p>
-                  </div>
-                  <div className="flex -space-x-2">
-                    {room.avatars.map((av, idx) => (
-                      <div key={idx} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-sm shadow-sm">
-                        {av}
-                      </div>
-                    ))}
-                    {room.players > 3 && (
-                      <div className="w-8 h-8 rounded-full border-2 border-white bg-primary-orange text-white flex items-center justify-center text-[10px] font-bold">
-                        +{room.players - 3}
-                      </div>
-                    )}
-                  </div>
+        <h3 className="font-bold text-gray-800 mb-4 text-left">Phòng Gần Đây</h3>
+        {liveRecentRooms.length > 0 ? (
+          liveRecentRooms.map(room => (
+            <div key={room.id} className="bg-gradient-to-r from-[#FDEFD3] to-[#F7D8A0] p-4 rounded-[24px] mb-4 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-black text-lg">Phòng {room.id}</h4>
+                <div className="flex -space-x-2">
+                  {room.avatars?.map((av, idx) => (
+                    <div key={idx} className="w-7 h-7 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] shadow-sm">{av}</div>
+                  ))}
                 </div>
-                <button 
-                  onClick={() => handleRejoin(room.id)}
-                  className="w-full py-2 bg-white/60 hover:bg-white/80 active:scale-95 rounded-full text-primary-orange font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <span className="text-lg">↺</span> Vào Lại Phòng
-                </button>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-10 text-gray-300 text-sm italic">
-              {recentRooms.length > 0 ? "Đang cập nhật trạng thái..." : "Không có phòng gần đây"}
+              <button 
+                onClick={() => handleRejoin(room.id)}
+                className="w-full py-2 bg-white/70 rounded-full text-primary-orange font-bold text-sm shadow-sm"
+              >
+                Vào Lại
+              </button>
             </div>
-          )}
-        </div>
+          ))
+        ) : (
+          <div className="text-center py-4 text-gray-300 text-xs">Không có phòng gần đây</div>
+        )}
       </div>
     </div>
   );
