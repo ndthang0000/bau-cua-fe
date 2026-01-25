@@ -4,16 +4,17 @@ import { useGameStore } from '../store/useGameStore';
 import { toast } from 'react-hot-toast';
 
 export const useSocketIntegration = () => {
-  const { setMembers, updateRoomStatus, setRoomData, addRecentRoom } = useGameStore();
+  const { setMembers, updateRoomStatus, setRoomData, addRecentRoom, updateTimer } = useGameStore();
 
   useEffect(() => {
     if (!socket.connected) {
       socket.connect();
     }
 
-    // DEBUG: Theo dõi mọi event đổ về
-    socket.onAny((eventName, args) => {
-      console.log(`📡 [Socket Event]: ${eventName}`, args);
+
+
+    socket.on('timer_update', (timeLeft) => {
+      updateTimer(timeLeft);
     });
 
     // 1. Xử lý cập nhật phòng (QUAN TRỌNG NHẤT)

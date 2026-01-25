@@ -19,6 +19,9 @@ export const useGameStore = create(
         isHost: false,
         status: 'waiting', // waiting, shaking, betting, result
         timeRemaining: 0,  // Đếm ngược thời gian cược
+        currentDealer: null,
+        timeLeft: 0,
+        hostId: null,
       },
       selectedChip: 10000, // Mặc định là chip 10k
       // --- REAL-TIME DATA (Sẽ được Server cập nhật) ---
@@ -35,12 +38,7 @@ export const useGameStore = create(
         minBet: 5000,
         maxBet: 50000,
       },
-      gameHistory: [
-        { id: 248, results: ['🦀', '🐟', '🐓'], time: '14:30:12' },
-        { id: 247, results: ['🎃', '🎃', '🦐'], time: '14:29:45' },
-        { id: 246, results: ['🦌', '🐟', '🦀'], time: '14:29:10' },
-        { id: 245, results: ['🐓', '🐓', '🐓'], time: '14:28:30' },
-      ],
+      
       // --- ACTIONS ---
 
       initUser: () => set((state) => {
@@ -52,25 +50,43 @@ export const useGameStore = create(
         set((state) => ({ user: { ...state.user, ...data } })),
 
       setRoomData: (roomData) => set((state) => {
+  // Nếu dữ liệu rỗng thì không làm gì cả
+  if (!roomData) return state;
 
-        const roomState = {
-          id: roomData.roomId,
-          hostId: roomData.hostId,
-          isHost: roomData.hostId === state.user.id,
-          config: roomData.config,
-          status: roomData.status || 'waiting'
-        };
+  // Xác định ID phòng linh hoạt (hỗ trợ cả roomId và id)
+  const newId = roomData.roomId || roomData.id || state.room?.id;
+  
+  // Tính toán isHost dựa trên dữ liệu mới nhất hoặc cũ nhất có thể
+  const currentHostId = roomData.hostId || state.room?.hostId;
+  const isHost = currentHostId === state.user?.id;
 
-        return {
-          room: {
-            id: roomState.id,
-            hostId: roomState.hostId,
-            isHost: roomState.isHost,
-            config: roomState.config,
-            status: roomState.status
-          },
-        }
-      }),
+  return {
+    // 1. Cập nhật Room: Giữ lại state cũ, chỉ ghi đè những gì server gửi lên
+    room: {
+      ...(state.room || {}), // Bảo vệ các trường cũ
+      id: newId,
+      hostId: currentHostId,
+      isHost: isHost,
+      // Dùng cú pháp ?? (Nullish coalescing) để lấy dữ liệu mới nếu có, không thì giữ cũ
+      config: roomData.config ?? state.room?.config,
+      status: roomData.status ?? state.room?.status,
+      currentDealer: roomData.currentDealer ?? state.room?.currentDealer,
+      lastResult: roomData.lastResult ?? state.room?.lastResult,
+      timeLeft: state.room?.timeLeft ?? roomData.timeLeft,
+      totalBets: roomData.totalBets ?? state.room?.totalBets,
+    },
+
+    // 2. Cập nhật các mảng dữ liệu bên ngoài room object
+    history: roomData.history ?? state.history,
+    roomMembers: roomData.members ?? state.roomMembers,
+
+    // 3. Tự động reset myBets khi status chuyển từ 'result' sang 'betting'
+    // (Logic này giúp FE tự dọn cược cũ của bản thân khi ván mới bắt đầu)
+    myBets: (state.room?.status === 'result' && roomData.status === 'betting') 
+      ? {} 
+      : state.myBets
+  };
+}),
 
       updateRoomStatus: (status) =>
         set((state) => ({ room: { ...state.room, status } })),
@@ -81,6 +97,9 @@ export const useGameStore = create(
         recentRooms: [roomInfo, ...state.recentRooms.filter(r => r.id !== roomInfo.id)].slice(0, 3)
       })),
 
+      updateTimer: (timeLeft) => set((state) => ({
+        room: state.room ? { ...state.room, timeLeft } : null
+      })),
 
       // --- ACTIONS ---
       setSelectedChip: (amount) => set({ selectedChip: amount }),
@@ -90,6 +109,13 @@ export const useGameStore = create(
         user: { ...state.user, balance: state.user.balance - amount }
       })),
 
+      addMyBet: (door, amount) => set((state) => ({
+        myBets: {
+          ...state.myBets,
+          [door]: (state.myBets[door] || 0) + amount
+        }
+      })),
+      resetMyBets: () => set({ myBets: {} }),
       resetRoom: () => set({
         room: { id: null, isHost: false, config: null, status: 'waiting' },
         roomMembers: [],
@@ -101,11 +127,12 @@ export const useGameStore = create(
     {
       name: 'bau-cua-session',
       storage: createJSONStorage(() => localStorage),
-      // Chỉ lưu User và RecentRooms vào localStorage
-      // Đừng lưu RoomMembers hay Status vì nó là dữ liệu tức thời từ Server
+      // CỰC KỲ QUAN TRỌNG: 
+      // Chỉ lưu user và recentRooms. 
+      // BIẾN room PHẢI ĐỂ TRỐNG để mỗi lần mở app nó luôn là null
       partialize: (state) => ({
         user: state.user,
-        recentRooms: state.recentRooms
+        recentRooms: state.recentRooms,
       }),
     }
   )

@@ -13,8 +13,6 @@ export default function App() {
   // Lấy roomData từ store để biết trạng thái từ Server
   const { room, initUser } = useGameStore(); 
   const [currentView, setCurrentView] = useState('welcome');
-  console.log("room.status: ",room.status)
-  console.log("room.id: ",room.id)
   useSocketIntegration();
 
   useEffect(() => {
@@ -23,7 +21,7 @@ export default function App() {
 
   // LOGIC ĐIỀU HƯỚNG TỰ ĐỘNG DỰA TRÊN DỮ LIỆU SERVER
   useEffect(() => {
-  if (room && room.id) {
+  if (room.status && room.id) {
     const s = room.status;
     console.log("s là gì: ",s)
     // Nếu trạng thái thuộc nhóm đang chơi game
@@ -37,9 +35,11 @@ export default function App() {
     }
     // Nếu ván đấu đã kết thúc hoàn toàn hoặc giải tán
     else if (s === 'finished') {
+      console.log("sao nó lại vô đây")
       setCurrentView('welcome');
     }
   } else {
+    console.log(" m chạy xuống đây à")
     // Nếu không có dữ liệu phòng, chỉ về welcome nếu không phải đang ở màn join/create
     if (currentView !== 'join' && currentView !== 'create-room') {
       setCurrentView('welcome');
