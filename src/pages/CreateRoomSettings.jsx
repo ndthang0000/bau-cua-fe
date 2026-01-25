@@ -5,7 +5,6 @@ import { socket } from '../socket'; // Import instance socket của bạn
 const BALANCE_OPTIONS = [100000, 200000, 500000, 1000000, 3000000];
 
 export default function CreateRoomSettings({ onBack, onSuccess }) {
-  console.log("Vô create room")
   const { user, updateRoomConfig } = useGameStore();
   const [config, setConfig] = useState(useGameStore.getState().roomConfig);
 
@@ -16,16 +15,6 @@ export default function CreateRoomSettings({ onBack, onSuccess }) {
   const minOptions = minRates.map(rate => config.startingBalance * rate);
   const maxOptions = maxRates.map(rate => config.startingBalance * rate);
 
-  const handleBalanceChange = (val) => {
-    const newMin = val * 0.025;
-    const newMax = val * 0.5;
-    setConfig(prev => ({ 
-      ...prev, 
-      startingBalance: val,
-      minBet: newMin,
-      maxBet: newMax
-    }));
-  };
 
   const handleUpdate = (key, value) => {
     setConfig(prev => ({ ...prev, [key]: value }));

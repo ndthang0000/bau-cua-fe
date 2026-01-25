@@ -11,6 +11,10 @@ export default function LobbyScreen({ onBack,onStartGame }) {
     alert(" Đã sao chép link mời bạn bè!");
   };
 
+  const handleStartGame = () => {
+    socket.emit('start_game', { roomId: room.id });
+  };
+  
   const handleBack = () => {
     if (room.id) {
       // 1. Báo Server cho mình rời phòng
@@ -116,7 +120,7 @@ export default function LobbyScreen({ onBack,onStartGame }) {
         
         {room.isHost && (
         <button
-          onClick={onStartGame}
+          onClick={handleStartGame}
           className="w-full bg-primary-orange py-4 rounded-full font-black text-xl text-white shadow-lg shadow-orange-200 flex items-center justify-center gap-3 active:scale-[0.98] transition-all">
           <Play size={24} fill="white" /> BẮT ĐẦU VÁN ĐẤU
           </button>

@@ -69,7 +69,6 @@ export const useGameStore = create(
             config: roomState.config,
             status: roomState.status
           },
-          roomMembers: roomData.members || []
         }
       }),
 

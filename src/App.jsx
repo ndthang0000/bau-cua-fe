@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState } from 'react';
-import WelcomeScreen from './pages/WelcomeScreen'; // Đổi tên App cũ thành WelcomeScreen
+import WelcomeScreen from './pages/WelcomeScreen';
 import JoinRoomScreen from './pages/JoinRoomScreen';
 import { useGameStore } from './store/useGameStore';
 import LobbyScreen from './pages/LobbyScreen';
@@ -10,21 +10,48 @@ import { useSocketIntegration } from './hooks/useSocketIntegration';
 import { Toaster } from 'react-hot-toast';
 
 export default function App() {
-  const { room } = useGameStore();
-  const [currentView, setCurrentView] = useState('welcome'); // welcome | create | join | lobby | game
+  // Lấy roomData từ store để biết trạng thái từ Server
+  const { room, initUser } = useGameStore(); 
+  const [currentView, setCurrentView] = useState('welcome');
+  console.log("room.status: ",room.status)
+  console.log("room.id: ",room.id)
   useSocketIntegration();
-  // Hàm xử lý khi người dùng nhập mã và nhấn xác nhận thành công
+
+  useEffect(() => {
+    initUser();
+  }, [initUser]);
+
+  // LOGIC ĐIỀU HƯỚNG TỰ ĐỘNG DỰA TRÊN DỮ LIỆU SERVER
+  useEffect(() => {
+  if (room && room.id) {
+    const s = room.status;
+    console.log("s là gì: ",s)
+    // Nếu trạng thái thuộc nhóm đang chơi game
+    if (['shaking', 'betting', 'result'].includes(s)) {
+      setCurrentView('game');
+    } 
+    // Nếu vẫn đang ở sảnh chờ
+    else if (s === 'waiting') {
+      console.log("vô đây đc ko")
+      setCurrentView('lobby');
+    }
+    // Nếu ván đấu đã kết thúc hoàn toàn hoặc giải tán
+    else if (s === 'finished') {
+      setCurrentView('welcome');
+    }
+  } else {
+    // Nếu không có dữ liệu phòng, chỉ về welcome nếu không phải đang ở màn join/create
+    if (currentView !== 'join' && currentView !== 'create-room') {
+      setCurrentView('welcome');
+    }
+  }
+}, [room?.status, room?.id]);
+
   const handleJoinSuccess = (roomId) => {
-    // Ở đây bạn có thể thêm logic check socket hoặc API xem phòng có tồn tại không
-    setCurrentView('lobby'); 
+    // Không cần setCurrentView('lobby') nữa vì useEffect phía trên sẽ tự lo
+    console.log("Joined room:", roomId);
   };
 
-
-  const initUser = useGameStore(state => state.initUser);
-useEffect(() => {
-  initUser();
-}, []);
-  
   return (
     <main className="min-h-screen bg-bg-cream">
       {currentView === 'welcome' && (
@@ -34,34 +61,24 @@ useEffect(() => {
       {currentView === 'join' && (
         <JoinRoomScreen 
           onBack={() => setCurrentView('welcome')} 
-          onSuccess={handleJoinSuccess} // Truyền callback xuống
+          onSuccess={handleJoinSuccess} 
         />
       )}
 
+      {/* Lobby: Khi status là 'waiting' */}
       {currentView === 'lobby' && (
-        <LobbyScreen onBack={() => setCurrentView('welcome')}  onStartGame={() => setCurrentView('game')} />
+        <LobbyScreen onBack={() => setCurrentView('welcome')} />
       )}
 
       {currentView === 'create-room' && (
-        <CreateRoomSettings onBack={() => setCurrentView('welcome')} onSuccess={() => setCurrentView('lobby')}/>
+        <CreateRoomSettings onBack={() => setCurrentView('welcome')} onSuccess={() => console.log(room)}/>
       )}
 
       {currentView === 'game' && (
         <GameBoardScreen />
       )}
-      <Toaster 
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#333',
-            color: '#fff',
-            borderRadius: '16px',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          },
-        }} 
-      />
+
+      <Toaster />
     </main>
   );
 }
