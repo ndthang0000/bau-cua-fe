@@ -12,7 +12,6 @@ export const useSocketIntegration = () => {
     }
 
 
-
     socket.on('timer_update', (timeLeft) => {
       updateTimer(timeLeft);
     });
@@ -54,6 +53,8 @@ export const useSocketIntegration = () => {
       socket.off('room_update', onRoomUpdate);
       socket.off('game_status', onGameStatus);
       socket.off('error_msg', onErrorMsg);
+      socket.off('game_result_individual');
+      socket.off('timer_update');
     };
   }, [setMembers, updateRoomStatus, setRoomData, addRecentRoom]);
 };

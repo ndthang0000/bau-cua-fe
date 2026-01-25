@@ -17,6 +17,7 @@ export default function CreateRoomSettings({ onBack, onSuccess }) {
 
 
   const handleUpdate = (key, value) => {
+    console.log({key:value})
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 

@@ -14,7 +14,6 @@ const NAMES = {
 export default function SoiCauModal({ isOpen, onClose }) {
   // Lấy room từ store thay vì gameHistory (vì history nằm trong room)
   const { history=[] } = useGameStore();
-  console.log("history length: ",length)
   // TÍNH TOÁN THỐNG KÊ TỶ LỆ (%)
   const stats = useMemo(() => {
     const counts = { bau: 0, cua: 0, ca: 0, ga: 0, tom: 0, nai: 0 };

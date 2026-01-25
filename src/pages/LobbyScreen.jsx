@@ -66,7 +66,7 @@ export default function LobbyScreen({ onBack,onStartGame }) {
         </div>
 
         <div className="grid grid-cols-4 gap-y-8 gap-x-4">
-  {roomMembers.map((member) => (
+  {roomMembers.filter(item=> item.isOnline===true).map((member) => (
     <div key={member.userId} className="flex flex-col items-center relative">
       <div className="relative">
         <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center text-4xl bg-white shadow-md
