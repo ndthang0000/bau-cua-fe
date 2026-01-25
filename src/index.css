@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-orange: #FF5722;
+  --color-secondary-orange: #FF7043;
+  --color-bg-cream: #FDF9F6;
+  --color-input-border: #E5E7EB;
+  
+  --shadow-button: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-bg-cream text-gray-800 font-sans antialiased;
+  }
+}
+
+/* Ẩn scrollbar cho khu vực chọn avatar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
