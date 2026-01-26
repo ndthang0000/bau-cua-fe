@@ -64,20 +64,23 @@ export default function JoinRoomScreen({ onBack, onSuccess }) {
 
   // FETCH THÔNG TIN PHÒNG GẦN ĐÂY (REAL-TIME)
   useEffect(() => {
-    if (recentRooms.length > 0) {
-      const ids = recentRooms.map(r => r.id);
-      if (!socket.connected) socket.connect();
-      
-      socket.emit('get_rooms_info', ids);
-      socket.on('rooms_info_res', (data) => {
-        setLiveRecentRooms(data);
-      });
-    }
-
-    return () => {
-      socket.off('rooms_info_res');
-    };
-  }, [recentRooms]);
+  if (recentRooms.length > 0) {
+    const ids = recentRooms.map(r => r.id);
+    if (!socket.connected) socket.connect();
+    
+    // Emit kèm theo userId và sử dụng callback để nhận response
+    socket.emit('get_recent_rooms_info', { 
+      roomIds: ids, 
+      userId: user.id 
+    }, (response) => {
+      if (response.success) {
+        setLiveRecentRooms(response.data);
+      } else {
+        console.error("Lỗi lấy thông tin phòng:", response.message);
+      }
+    });
+  }
+}, [recentRooms, user.id]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans max-w-md mx-auto relative overflow-hidden">

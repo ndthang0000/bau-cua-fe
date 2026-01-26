@@ -7,17 +7,20 @@ import DiceBowl from '../components/game/DiceBowl';
 import SoiCauModal from '../components/game/SoiCauModal';
 import toast from 'react-hot-toast';
 import WinEffect from '../components/game/WinEffect';
+import LeaderboardModal from '../components/game/LeaderboardModal';
+import BetHistoryModal from '../components/game/BetHistoryModal';
 
 export default function GameBoardScreen() {
   const { room, user, selectedChip, setSelectedChip, roomMembers, myBets, addMyBet, updateUser } = useGameStore();
   const [isSoiCauOpen, setIsSoiCauOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isBetHistoryOpen, setIsBetHistoryOpen] = useState(false);
   const [winData, setWinData] = useState({ winAmount: 0, isVisible: false });
   // State quản lý các ô đang được chọn để đặt cược
   const [selectedDoors, setSelectedDoors] = useState([]);
 
   const chipValues = [10000, 50000, 100000, 500000, 1000000];
   const chipColors = ['#3B82F6', '#EF4444', '#A855F7', '#EAB308', '#EC4899', '#10B981'];
-
 
   const currentBalance = useMemo(() => {
     return roomMembers.find(m => m.userId === user.id)?.currentBalance || 0;
@@ -130,11 +133,14 @@ export default function GameBoardScreen() {
     });
   }, [])
   return (
-    <div className="h-screen bg-[#0A0A0A] text-white flex flex-col font-sans max-w-md mx-auto overflow-hidden relative">
+    <div className="h-[100dvh] bg-[#0A0A0A] text-white flex flex-col font-sans max-w-md mx-auto overflow-hidden relative">
 
       {/* 1. Sticky Header - Cố định phía trên */}
-      <div className="sticky top-0 z-[60] bg-[#0A0A0A]/90 backdrop-blur-md border-b border-gray-800">
-        <GameHeader onPressSoiCau={() => setIsSoiCauOpen(true)} />
+      <div className="flex-none z-[60] bg-[#0A0A0A]/90 backdrop-blur-md border-b border-gray-800">
+        <GameHeader
+          onPressSoiCau={() => setIsSoiCauOpen(true)}
+          onPressLeaderboard={() => setIsLeaderboardOpen(true)}
+          onPressBetHistory={() => setIsBetHistoryOpen(true)} />
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
@@ -255,6 +261,8 @@ export default function GameBoardScreen() {
       </div>
 
       <SoiCauModal isOpen={isSoiCauOpen} history={soiCauData} onClose={() => setIsSoiCauOpen(false)} />
+      <LeaderboardModal isOpen={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
+      <BetHistoryModal isOpen={isBetHistoryOpen} onClose={() => setIsBetHistoryOpen(false)} />
       <WinEffect winData={winData} />
     </div>
   );
