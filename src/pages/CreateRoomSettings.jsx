@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { ChevronLeft, Rocket, Minus, Plus, Users, Wallet, Scale, ArrowLeftRight } from 'lucide-react';
 import { socket } from '../socket'; // Import instance socket của bạn
@@ -7,6 +7,7 @@ const BALANCE_OPTIONS = [100000, 200000, 500000, 1000000, 3000000];
 export default function CreateRoomSettings({ onBack, onSuccess }) {
   const { user, updateRoomConfig } = useGameStore();
   const [config, setConfig] = useState(useGameStore.getState().roomConfig);
+  const roomNameInputRef = useRef(null);
 
   // Logic tính toán các tùy chọn cược dựa trên vốn khởi điểm
   const minRates = [0.025, 0.05, 0.1]; // 2.5%, 5%, 10%
@@ -17,7 +18,6 @@ export default function CreateRoomSettings({ onBack, onSuccess }) {
 
 
   const handleUpdate = (key, value) => {
-    console.log({key:value})
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 
@@ -41,6 +41,18 @@ export default function CreateRoomSettings({ onBack, onSuccess }) {
     onSuccess(); 
   };
 
+  useEffect(() => {
+    // Cập nhật lại cấu hình khi component mount
+    setConfig({ ...config,minBet: minOptions[0], maxBet: maxOptions[0] });
+  }, [config.startingBalance]);
+
+  useEffect(() => {
+    // Focus vào input "Tên Phòng" khi component mount
+    if (roomNameInputRef.current) {
+      roomNameInputRef.current.focus();
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] flex flex-col font-sans max-w-md mx-auto">
       {/* Header */}
@@ -61,6 +73,7 @@ export default function CreateRoomSettings({ onBack, onSuccess }) {
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase ml-2 mb-2 block">Tên Phòng</label>
               <input 
+                ref={roomNameInputRef}
                 type="text" 
                 value={config.name}
                 onChange={(e) => handleUpdate('name', e.target.value)}

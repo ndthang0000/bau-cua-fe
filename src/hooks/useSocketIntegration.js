@@ -4,7 +4,7 @@ import { useGameStore } from '../store/useGameStore';
 import { toast } from 'react-hot-toast';
 
 export const useSocketIntegration = () => {
-  const { setMembers, updateRoomStatus, setRoomData, addRecentRoom, updateTimer } = useGameStore();
+  const { setMembers, updateRoomStatus, setRoomData, addRecentRoom, updateTimer, updateRoomConfig } = useGameStore();
 
   useEffect(() => {
     if (!socket.connected) {
@@ -18,11 +18,10 @@ export const useSocketIntegration = () => {
 
     // 1. Xử lý cập nhật phòng (QUAN TRỌNG NHẤT)
     const onRoomUpdate = (room) => {
-      console.log("🎯 Dữ liệu phòng mới nhận được:", room);
       if (room) {
         if (room.members) setMembers(room.members);
         setRoomData(room);
-
+        if (room.roomConfig) updateRoomConfig(room.roomConfig);
         // Lưu vào danh sách phòng gần đây
         addRecentRoom({
           id: room.roomId,

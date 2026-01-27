@@ -2,6 +2,15 @@ import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import { useGameStore } from '../../store/useGameStore';
 
+const mappingText = {
+  ga: 'Gà',
+  bau: 'Bầu',
+  cua: 'Cua',
+  tom: 'Tôm',
+  ca: 'Cá',
+  nai: 'Nai'
+}
+
 export default function DiceBowl({ status, result }) {
   const controls = useAnimation();
   const isShaking = status === 'shaking';
@@ -122,7 +131,7 @@ export default function DiceBowl({ status, result }) {
 
       <div className="mt-4 text-center h-4">
         <p className={`text-[10px] font-bold uppercase tracking-widest ${isShaking ? 'text-yellow-500' : isBetting ? 'text-green-500' : 'text-gray-400'}`}>
-           {isShaking ? '🚀 Đang xóc...' : isBetting ? '💰 Đặt cược đi!' : isResult ? '🧐 Kết quả là...' : '⏳ Đang chờ cái...'}
+           {isShaking ? '🚀 Đang xóc...' : isBetting ? '💰 Đặt cược đi!' : isResult ? `🧐 Kết quả là: ${room.lastResult?.map(item => mappingText[item])?.join(', ')}` : '⏳ Đang chờ cái...'}
         </p>
       </div>
     </div>

@@ -4,8 +4,7 @@ import { ChevronLeft, Settings, Play, Copy, Plus } from 'lucide-react';
 import { socket } from '../socket';
 
 export default function LobbyScreen({ onBack,onStartGame }) {
-  const { room, roomMembers, user,resetRoom } = useGameStore();
-  
+  const { room, roomMembers, user,resetRoom,roomConfig } = useGameStore();
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`https://baucua.io/join/${room.id}`);
     alert(" Đã sao chép link mời bạn bè!");
@@ -35,7 +34,7 @@ export default function LobbyScreen({ onBack,onStartGame }) {
         <button onClick={handleBack} className="p-2">
           <ChevronLeft size={24} className="text-gray-800" />
         </button>
-        <h2 className="flex-1 text-center font-bold text-lg mr-8">Phòng của {user.nickname}</h2>
+        <h2 className="flex-1 text-center font-bold text-lg mr-8">{roomConfig.name || `Phòng của ${user.nickname}`}</h2>
       </div>
 
       <div className="p-6 flex-1 overflow-y-auto">

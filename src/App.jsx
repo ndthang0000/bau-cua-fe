@@ -23,23 +23,19 @@ export default function App() {
   useEffect(() => {
   if (room.status && room.id) {
     const s = room.status;
-    console.log("s là gì: ",s)
     // Nếu trạng thái thuộc nhóm đang chơi game
     if (['shaking', 'betting', 'result'].includes(s)) {
       setCurrentView('game');
     } 
     // Nếu vẫn đang ở sảnh chờ
     else if (s === 'waiting') {
-      console.log("vô đây đc ko")
       setCurrentView('lobby');
     }
     // Nếu ván đấu đã kết thúc hoàn toàn hoặc giải tán
     else if (s === 'finished') {
-      console.log("sao nó lại vô đây")
       setCurrentView('welcome');
     }
   } else {
-    console.log(" m chạy xuống đây à")
     // Nếu không có dữ liệu phòng, chỉ về welcome nếu không phải đang ở màn join/create
     if (currentView !== 'join' && currentView !== 'create-room') {
       setCurrentView('welcome');
