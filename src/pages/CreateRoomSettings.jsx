@@ -188,6 +188,51 @@ export default function CreateRoomSettings({ onBack, onSuccess }) {
           </div>
         </section>
 
+        {/* Section: Chế độ chơi */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-gray-400 font-bold text-xs uppercase tracking-widest">
+            <Rocket size={16} className="text-primary-orange" /> Chế độ chơi
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Auto Mode */}
+            <button 
+              onClick={() => handleUpdate('playMode', 'auto')}
+              className={`p-4 rounded-[24px] flex flex-col items-center gap-2 border-2 transition-all
+                ${config.playMode === 'auto' ? 'bg-white border-primary-orange shadow-md' : 'bg-white border-transparent'}`}
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl
+                ${config.playMode === 'auto' ? 'bg-orange-100' : 'bg-gray-100'}`}>
+                ⏱️
+              </div>
+              <div className="text-center">
+                <p className={`font-bold text-sm ${config.playMode === 'auto' ? 'text-primary-orange' : 'text-gray-700'}`}>Tự động</p>
+                <p className="text-[9px] text-gray-400">Đếm ngược tự động</p>
+              </div>
+            </button>
+
+            {/* Manual Mode */}
+            <button 
+              onClick={() => handleUpdate('playMode', 'manual')}
+              className={`p-4 rounded-[24px] flex flex-col items-center gap-2 border-2 transition-all
+                ${config.playMode === 'manual' ? 'bg-white border-primary-orange shadow-md' : 'bg-white border-transparent'}`}
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl
+                ${config.playMode === 'manual' ? 'bg-orange-100' : 'bg-gray-100'}`}>
+                🎮
+              </div>
+              <div className="text-center">
+                <p className={`font-bold text-sm ${config.playMode === 'manual' ? 'text-primary-orange' : 'text-gray-700'}`}>Thủ công</p>
+                <p className="text-[9px] text-gray-400">Nhà cái điều khiển</p>
+              </div>
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400 italic text-center">
+            {config.playMode === 'auto' 
+              ? '* Game tự động chạy với thời gian đếm ngược cho mỗi pha.' 
+              : '* Nhà cái sẽ điều khiển từng pha: đặt cược → xóc → mở bát.'}
+          </p>
+        </section>
+
         {/* Section: Hạn mức cược */}
         <section className="space-y-4 mb-32">
         <div className="flex items-center gap-2 text-gray-400 font-bold text-xs uppercase tracking-widest">

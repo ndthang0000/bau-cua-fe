@@ -97,9 +97,9 @@ export default function DiceBowl({ status, result }) {
             )}
           </div>
 
-          {/* TIMER ĐẾM NGƯỢC (Chỉ hiện khi betting) */}
+          {/* TIMER ĐẾM NGƯỢC (Chỉ hiện khi betting & mode auto có timer) */}
           <AnimatePresence>
-            {isBetting && (
+            {isBetting && room?.config?.playMode !== 'manual' && timeLeft > 0 && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}

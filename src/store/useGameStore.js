@@ -34,11 +34,12 @@ export const useGameStore = create(
         maxPlayers: 15,
         startingBalance: 100000,
         dealerMode: 'rotate', // 'fixed' | 'rotate'
+        playMode: 'auto', // 'auto' | 'manual'
         rotateRounds: 3,
         minBet: 5000,
         maxBet: 50000,
       },
-      
+
       // --- ACTIONS ---
 
       initUser: () => set((state) => {
@@ -50,43 +51,43 @@ export const useGameStore = create(
         set((state) => ({ user: { ...state.user, ...data } })),
 
       setRoomData: (roomData) => set((state) => {
-  // Nếu dữ liệu rỗng thì không làm gì cả
-  if (!roomData) return state;
+        // Nếu dữ liệu rỗng thì không làm gì cả
+        if (!roomData) return state;
 
-  // Xác định ID phòng linh hoạt (hỗ trợ cả roomId và id)
-  const newId = roomData.roomId || roomData.id || state.room?.id;
-  
-  // Tính toán isHost dựa trên dữ liệu mới nhất hoặc cũ nhất có thể
-  const currentHostId = roomData.hostId || state.room?.hostId;
-  const isHost = currentHostId === state.user?.id;
+        // Xác định ID phòng linh hoạt (hỗ trợ cả roomId và id)
+        const newId = roomData.roomId || roomData.id || state.room?.id;
 
-  return {
-    // 1. Cập nhật Room: Giữ lại state cũ, chỉ ghi đè những gì server gửi lên
-    room: {
-      ...(state.room || {}), // Bảo vệ các trường cũ
-      id: newId,
-      hostId: currentHostId,
-      isHost: isHost,
-      // Dùng cú pháp ?? (Nullish coalescing) để lấy dữ liệu mới nếu có, không thì giữ cũ
-      config: roomData.config ?? state.room?.config,
-      status: roomData.status ?? state.room?.status,
-      currentDealer: roomData.currentDealer ?? state.room?.currentDealer,
-      lastResult: roomData.lastResult ?? state.room?.lastResult,
-      timeLeft: state.room?.timeLeft ?? roomData.timeLeft,
-      totalBets: roomData.totalBets ?? state.room?.totalBets,
-    },
+        // Tính toán isHost dựa trên dữ liệu mới nhất hoặc cũ nhất có thể
+        const currentHostId = roomData.hostId || state.room?.hostId;
+        const isHost = currentHostId === state.user?.id;
 
-    // 2. Cập nhật các mảng dữ liệu bên ngoài room object
-    history: roomData.history ?? state.history,
-    roomMembers: roomData.members ?? state.roomMembers,
+        return {
+          // 1. Cập nhật Room: Giữ lại state cũ, chỉ ghi đè những gì server gửi lên
+          room: {
+            ...(state.room || {}), // Bảo vệ các trường cũ
+            id: newId,
+            hostId: currentHostId,
+            isHost: isHost,
+            // Dùng cú pháp ?? (Nullish coalescing) để lấy dữ liệu mới nếu có, không thì giữ cũ
+            config: roomData.config ?? state.room?.config,
+            status: roomData.status ?? state.room?.status,
+            currentDealer: roomData.currentDealer ?? state.room?.currentDealer,
+            lastResult: roomData.lastResult ?? state.room?.lastResult,
+            timeLeft: state.room?.timeLeft ?? roomData.timeLeft,
+            totalBets: roomData.totalBets ?? state.room?.totalBets,
+          },
 
-    // 3. Tự động reset myBets khi status chuyển từ 'result' sang 'betting'
-    // (Logic này giúp FE tự dọn cược cũ của bản thân khi ván mới bắt đầu)
-    myBets: (state.room?.status === 'result' && roomData.status === 'betting') 
-      ? {} 
-      : state.myBets
-  };
-}),
+          // 2. Cập nhật các mảng dữ liệu bên ngoài room object
+          history: roomData.history ?? state.history,
+          roomMembers: roomData.members ?? state.roomMembers,
+
+          // 3. Tự động reset myBets khi status chuyển từ 'result' sang 'betting'
+          // (Logic này giúp FE tự dọn cược cũ của bản thân khi ván mới bắt đầu)
+          myBets: (state.room?.status === 'result' && roomData.status === 'betting')
+            ? {}
+            : state.myBets
+        };
+      }),
 
       updateRoomStatus: (status) =>
         set((state) => ({ room: { ...state.room, status } })),

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { socket } from '../socket';
 import { useGameStore } from '../store/useGameStore';
 import { toast } from 'react-hot-toast';
+import { SOUNDS } from './useSound';
 
 export const useSocketIntegration = () => {
   const {
@@ -16,6 +17,17 @@ export const useSocketIntegration = () => {
     clearLiveBets,
     clearBetRecords
   } = useGameStore();
+
+  // Helper để phát âm thanh
+  const playSound = (soundKey, volume = 0.5) => {
+    try {
+      const audio = new Audio(`/sounds/${soundKey}.mp3`);
+      audio.volume = volume;
+      audio.play().catch(err => console.warn('Sound error:', err));
+    } catch (err) {
+      console.warn('Cannot play sound:', err);
+    }
+  };
 
   useEffect(() => {
     if (!socket.connected) {
@@ -76,6 +88,9 @@ export const useSocketIntegration = () => {
         amount: betData.amount,
         timestamp: betData.timestamp || new Date().toISOString()
       });
+
+      // Phát âm thanh khi có lệnh cược mới
+      playSound('new-bet', 0.3);
     };
 
     // 3. Xử lý khi có bet bị hủy
@@ -91,6 +106,37 @@ export const useSocketIntegration = () => {
         // Khi bắt đầu ván mới, xóa live bets cũ
         clearLiveBets();
         clearBetRecords();
+        // Phát âm thanh ván mới
+        playSound('new-round', 0.5);
+      } else if (data.phase === 'result') {
+        // Phát âm thanh mở bát
+        playSound('bowl-open', 0.6);
+      }
+      // Hiện thông báo phase change
+      if (data.message) {
+        toast(data.message, { icon: '🎮' });
+      }
+    };
+
+    // 5. Thông báo dealer mới và cập nhật state
+    const onNewDealer = (data) => {
+      console.log("👑 New dealer:", data);
+      // Cập nhật currentDealer trong room state để UI re-render
+      if (data.dealer) {
+        setRoomData({ currentDealer: data.dealer });
+      }
+      if (data.msg) {
+        toast(data.msg, { icon: '👑', duration: 4000 });
+      }
+    };
+
+    // 6. Kết quả cho dealer
+    const onDealerResult = (data) => {
+      console.log("💰 Dealer result:", data);
+      if (data.profit > 0) {
+        toast.success(`Nhà cái thắng: +${data.profit.toLocaleString()}đ`);
+      } else if (data.profit < 0) {
+        toast.error(`Nhà cái thua: ${data.profit.toLocaleString()}đ`);
       }
     };
 
@@ -101,6 +147,8 @@ export const useSocketIntegration = () => {
     socket.on('new_bet', onNewBet);
     socket.on('bet_cancelled', onBetCancelled);
     socket.on('phase_change', onPhaseChange);
+    socket.on('new_dealer', onNewDealer);
+    socket.on('dealer_result', onDealerResult);
 
     return () => {
       // CLEANUP
@@ -113,6 +161,8 @@ export const useSocketIntegration = () => {
       socket.off('new_bet', onNewBet);
       socket.off('bet_cancelled', onBetCancelled);
       socket.off('phase_change', onPhaseChange);
+      socket.off('new_dealer', onNewDealer);
+      socket.off('dealer_result', onDealerResult);
     };
   }, [setMembers, updateRoomStatus, setRoomData, addRecentRoom, addLiveBet, removeLiveBet, clearLiveBets, clearBetRecords]);
 };
