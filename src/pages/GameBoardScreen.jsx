@@ -437,28 +437,7 @@ export default function GameBoardScreen() {
               <span className="text-yellow-500 text-lg">🏆</span>
               <span className="text-yellow-500 font-bold text-xs">Bạn đang làm Cái - Điều khiển ván đấu</span>
             </div>
-            {/* Test button - chỉ hiện khi dev mode */}
-            {room?.status === 'betting' && isManualMode && (
-              <button
-                onClick={() => {
-                  console.log('📢 Testing shake sound...');
-                  const audio = new Audio('/sounds/shake.mp3');
-                  audio.volume = 0.4;
-                  audio.play()
-                    .then(() => {
-                      console.log('✅ Test sound played successfully');
-                      toast.success('Test âm thanh thành công!');
-                    })
-                    .catch(err => {
-                      console.error('❌ Test sound failed:', err);
-                      toast.error('Không phát được âm thanh: ' + err.message);
-                    });
-                }}
-                className="w-full py-1.5 px-3 bg-gray-700/50 text-gray-300 text-[8px] rounded-lg border border-gray-600"
-              >
-                🔊 Test Âm Thanh Lắc
-              </button>
-            )}
+            
           </div>
         )}
 
