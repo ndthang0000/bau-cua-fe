@@ -9,9 +9,10 @@ import toast from 'react-hot-toast';
 import WinEffect from '../components/game/WinEffect';
 import LeaderboardModal from '../components/game/LeaderboardModal';
 import BetHistoryModal from '../components/game/BetHistoryModal';
+import MyBetsPanel from '../components/game/MyBetsPanel';
 
 export default function GameBoardScreen() {
-  const { room, user, selectedChip, setSelectedChip, roomMembers, myBets, addMyBet, updateUser } = useGameStore();
+  const { room, user, selectedChip, setSelectedChip, roomMembers, myBets, addMyBet, updateUser, addBetRecord, myBetRecords, liveBets, removeBetRecord } = useGameStore();
   const [isSoiCauOpen, setIsSoiCauOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isBetHistoryOpen, setIsBetHistoryOpen] = useState(false);
@@ -100,7 +101,18 @@ export default function GameBoardScreen() {
     }, (response) => {
       if (response.success) {
         // Cập nhật Store cho từng ô thành công
-        selectedDoors.forEach(door => addMyBet(door, selectedChip));
+        selectedDoors.forEach(door => {
+          addMyBet(door, selectedChip);
+          // Thêm bet record để track cho việc cancel
+          // Sử dụng betId từ server hoặc tạo ID tạm
+          const betId = response.betIds?.[door] || `temp-${Date.now()}-${door}-${Math.random().toString(36).substr(2, 9)}`;
+          addBetRecord({
+            betId,
+            door,
+            amount: selectedChip,
+            timestamp: new Date().toISOString()
+          });
+        });
 
         // Cập nhật số dư một lần duy nhất
         updateUser({ balance: response.newBalance });
@@ -132,6 +144,14 @@ export default function GameBoardScreen() {
       }, 2500);
     });
   }, [])
+
+  useEffect(() => {
+    // Reset chọn cửa khi không phải thời gian đặt cược
+    if (!isBettingTime) {
+      setSelectedDoors([]);
+    }
+  }, [isBettingTime]);
+
   return (
     <div className="h-[100dvh] bg-[#0A0A0A] text-white flex flex-col font-sans max-w-md mx-auto overflow-hidden relative">
 
@@ -168,7 +188,7 @@ export default function GameBoardScreen() {
           <DiceBowl status={room?.status} result={room?.lastResult} />
         </div>
 
-        {/* Bàn cược - Truyền thêm state selection */}
+        {/* Bàn cược - Truyền thêm state selection và live bets */}
         <div className="px-2">
           <BettingGrid
             isLock={!isBettingTime}
@@ -178,6 +198,13 @@ export default function GameBoardScreen() {
             myBets={myBets || {}}
             lastResult={room?.lastResult}
             status={room?.status}
+            liveBets={liveBets}
+            myBetRecords={myBetRecords}
+            onCancelBet={(bet) => {
+              // Cập nhật store khi bet bị cancel
+              removeBetRecord(bet.betId);
+              addMyBet(bet.door, -bet.amount);
+            }}
           />
         </div>
       </div>
@@ -218,9 +245,9 @@ export default function GameBoardScreen() {
           </button>
         </div>
 
-        {/* Bottom Actions - Layout mới: Balance | Đặt lại | Xác nhận/Xóc */}
+        {/* Bottom Actions - Layout mới: Balance | Cược của tôi | Đặt lại | Xác nhận/Xóc */}
         <div className="flex items-center gap-2">
-          {/* Thay Balance cho nút Gấp đôi */}
+          {/* Balance */}
           <div className="flex-1 bg-black/40 h-11 rounded-xl flex flex-col items-center justify-center border border-gray-800">
             <span className="text-[8px] text-gray-400 uppercase">Số dư</span>
             <span className="text-xs font-bold text-yellow-500">

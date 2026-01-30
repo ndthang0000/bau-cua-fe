@@ -115,11 +115,40 @@ export const useGameStore = create(
           [door]: (state.myBets[door] || 0) + amount
         }
       })),
-      resetMyBets: () => set({ myBets: {} }),
+      resetMyBets: () => set({ myBets: {}, myBetRecords: [] }),
+
+      // === BET RECORDS (để track từng lệnh bet với betId cho việc cancel) ===
+      myBetRecords: [], // Array of { betId, door, amount, timestamp }
+
+      addBetRecord: (betRecord) => set((state) => ({
+        myBetRecords: [...state.myBetRecords, betRecord]
+      })),
+
+      removeBetRecord: (betId) => set((state) => ({
+        myBetRecords: state.myBetRecords.filter(bet => bet.betId !== betId)
+      })),
+
+      clearBetRecords: () => set({ myBetRecords: [] }),
+
+      // === LIVE BETS từ các player khác (để hiển thị realtime) ===
+      liveBets: [], // Array of { userId, nickname, avatar, door, amount, timestamp }
+
+      addLiveBet: (bet) => set((state) => ({
+        liveBets: [...state.liveBets.slice(-20), bet] // Giữ tối đa 20 bet gần nhất
+      })),
+
+      removeLiveBet: (betId) => set((state) => ({
+        liveBets: state.liveBets.filter(bet => bet.betId !== betId)
+      })),
+
+      clearLiveBets: () => set({ liveBets: [] }),
+
       resetRoom: () => set({
         room: { id: null, isHost: false, config: null, status: 'waiting' },
         roomMembers: [],
-        myBets: {}
+        myBets: {},
+        myBetRecords: [],
+        liveBets: []
       }),
       updateRoomConfig: (config) =>
         set((state) => ({ roomConfig: { ...state.roomConfig, ...config } })),
